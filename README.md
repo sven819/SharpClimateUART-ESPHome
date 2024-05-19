@@ -79,7 +79,7 @@ Add the external_components entry to your ESPHome configuration file, pointing t
 Configure the uart section with the correct tx_pin and rx_pin for your hardware.
 Set up the climate platform to sharp_ac and name it appropriately.
 
+## Disclaimer
 This project is provided "as is" without any warranty of any kind, express or implied. By using this project, you acknowledge that you do so at your own risk. The authors are not responsible for any damages or issues that may arise from using this software. Use it at your own discretion.
 
-## Disclaimer
 This repository is not affiliated with, endorsed by, or in any way connected to Sharp, Bosch, Buderus, or IVT. All product and company names are trademarks™ or registered® trademarks of their respective holders. Use of them does not imply any affiliation with or endorsement by them.
