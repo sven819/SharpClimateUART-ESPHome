@@ -44,6 +44,7 @@ public:
     PowerMode getPowerMode();
     SwingVertical getSwingVertical();
     SwingHorizontal getSwingHorizontal();
+    bool getIon();
 };
 
 class SharpCommandFrame : public SharpFrame

@@ -2,6 +2,8 @@
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
 #include <iostream>
+#include "vane_select_horizontal.h"
+#include "vane_select_vertical.h"
 
 namespace esphome
 {
@@ -48,7 +50,7 @@ namespace esphome
     void SharpAc::startInit()
     {
       unsigned long currentMillis = millis();
-      if ((currentMillis - this->connectionStart >= interval) || (this->connectionStart == 0 ) )
+      if ((currentMillis - this->connectionStart >= interval) || (this->connectionStart == 0))
       {
         ESP_LOGD(TAG, "NEW CONNECTION");
         this->status = 0;
@@ -100,7 +102,6 @@ namespace esphome
         this->processUpdate(frame);
         break;
       }
-
     }
 
     SharpFrame SharpAc::readMsg()
@@ -120,13 +121,13 @@ namespace esphome
           this->errCounter++;
           return SharpFrame(msg, 0);
         }
-        else{
-          this->errCounter=0;
+        else
+        {
+          this->errCounter = 0;
           return SharpFrame(this->read());
-
         }
       }
-      this->errCounter=0;
+      this->errCounter = 0;
 
       read_array(msg, 8);
 
@@ -136,7 +137,7 @@ namespace esphome
         size = 17;
       else if (msg_id == 0xdc)
       {
-        if (msg[1] == 0x0b )
+        if (msg[1] == 0x0b)
           size = 14;
         else if (msg[1] == 0x0F)
           size = 18;
@@ -160,12 +161,17 @@ namespace esphome
       else
       {
         SharpModeFrame *status = static_cast<SharpModeFrame *>(&frame);
-        this->state.temperature = status->getTemperature();
         this->state.fan = status->getFanMode();
         this->state.mode = status->getPowerMode();
         this->state.state = status->getState();
         this->state.swingH = status->getSwingHorizontal();
         this->state.swingV = status->getSwingVertical();
+        if (this->state.state)
+        {
+          this->state.ion = status->getIon();
+          if (this->state.mode == PowerMode::cool || this->state.mode == PowerMode::heat)
+            this->state.temperature = status->getTemperature();
+        }
       }
       this->publishUpdate();
     }
@@ -228,7 +234,37 @@ namespace esphome
       {
         this->swing_mode = ClimateSwingMode::CLIMATE_SWING_OFF;
       }
+
       this->publish_state();
+      if (this->vaneHorizontal != nullptr)
+        this->vaneHorizontal->setVal(this->state.swingH);
+      if (this->vaneVertical != nullptr)
+        this->vaneVertical->setVal(this->state.swingV);
+      if (this->ionSwitch != nullptr)
+      {
+        this->ionSwitch->publish_state(this->state.ion);
+      }
+    }
+
+    void SharpAc::setIon(bool state)
+    {
+      this->state.ion = state;
+      SharpCommandFrame frame = this->state.toFrame();
+      this->write_frame(frame);
+    }
+
+    void SharpAc::setVaneHorizontal(SwingHorizontal state)
+    {
+      this->state.swingH = state;
+      SharpCommandFrame frame = this->state.toFrame();
+      this->write_frame(frame);
+    }
+
+    void SharpAc::setVaneVertical(SwingVertical state)
+    {
+      this->state.swingV = state;
+      SharpCommandFrame frame = this->state.toFrame();
+      this->write_frame(frame);
     }
 
     void SharpAc::loop()

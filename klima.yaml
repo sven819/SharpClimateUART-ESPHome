@@ -10,6 +10,7 @@ esp8266:
   
 api:
 ota:
+  platform: esphome
 web_server:
   port: 80
   
@@ -27,12 +28,15 @@ uart:
    rx_pin: 3         # hardware dependant
    baud_rate: 9600
    parity: EVEN
-  
-button:
-  - platform: restart
-    name: "Living Room Restart"
 
 climate:
-  - platform: sharp_ac       # adjust to match your AC unit!
+  - platform: sharp_ac     
+    id: hvac
     name: "Living Room AC"
+    horizontal_vane_select: 
+      name: "Horizontal Vane"
+    vertical_vane_select: 
+      name: "Vertikal Vane"
+    ion_switch:
+      name: Plasmacluster
 

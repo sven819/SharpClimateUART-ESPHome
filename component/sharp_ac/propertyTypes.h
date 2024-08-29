@@ -1,5 +1,7 @@
 #pragma once
 
+const int IonMode = 0x80;
+
 enum class PowerMode
 {
     heat = 0x1,

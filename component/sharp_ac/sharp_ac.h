@@ -2,6 +2,8 @@
 
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/uart/uart.h"
+#include "esphome/components/switch/switch.h"
+#include "esphome/components/select/select.h"
 
 #include "propertyTypes.h"
 #include "state.h"
@@ -20,6 +22,9 @@ namespace esphome
     using climate::ClimateSwingMode;
     using climate::ClimateTraits;
 
+    class VaneSelectVertical;
+    class VaneSelectHorizontal;
+
     class SharpAc : public climate::Climate, public esphome::uart::UARTDevice, public Component
     {
     public:
@@ -28,6 +33,10 @@ namespace esphome
       void loop() override;
       void setup() override;
       esphome::climate::ClimateTraits traits() override;
+
+      void setIon(bool state);
+      void setVaneHorizontal(SwingHorizontal val);
+      void setVaneVertical(SwingVertical val);
 
       void publishUpdate();
 
@@ -50,10 +59,26 @@ namespace esphome
 
       void write_ack();
 
+      void setIonSwitch(switch_::Switch *ionSwitch)
+      {
+        this->ionSwitch = ionSwitch;
+      };
+      void setVaneVerticalSelect(VaneSelectVertical *vane)
+      {
+        this->vaneVertical = vane;
+      };
+      void setVaneHorizontalSelect(VaneSelectHorizontal *vane)
+      {
+        this->vaneHorizontal = vane;
+      };
+
     private:
       void sendInitMsg(const uint8_t *arr, size_t size);
-      int errCounter = 0 ; 
+      int errCounter = 0;
 
+      switch_::Switch *ionSwitch;
+      VaneSelectVertical *vaneVertical;
+      VaneSelectHorizontal *vaneHorizontal;
 
     protected:
       SharpState state;
@@ -65,7 +90,6 @@ namespace esphome
       unsigned long connectionStart = 0;
       unsigned long previousMillis = 0;
       const long interval = 60000;
-
     };
   }
 }

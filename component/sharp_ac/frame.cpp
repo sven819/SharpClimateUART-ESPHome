@@ -123,6 +123,11 @@ PowerMode SharpModeFrame::getPowerMode()
     return static_cast<PowerMode>(this->data[5] & 0x0F);
 }
 
+bool SharpModeFrame::getIon()
+{
+    return (this->data[8] == 0x84);
+}
+
 SharpCommandFrame::SharpCommandFrame() : SharpFrame()
 {
     this->setSize(14);
@@ -132,7 +137,6 @@ SharpCommandFrame::SharpCommandFrame() : SharpFrame()
     this->data[2] = 0xfb;
     this->data[3] = 0x60;
     this->data[7] = 0x00;
-    this->data[9] = 0x80;
     this->data[10] = 0x00;
     this->data[11] = 0xe4;
 }
@@ -173,6 +177,17 @@ void SharpCommandFrame::setData(SharpState *state)
         this->data[5] = 0x31;
     else
         this->data[5] = 0x21;
+
+    if (state->ion)
+    {
+        this->data[9] = IonMode;
+        this->data[11] = 0xE4;
+    }
+    else
+    {
+        this->data[9] = 0x00;
+        this->data[11] = 0x10;
+    }
 
     this->data[8] = ((uint8_t)state->swingH << 4) | (uint8_t)state->swingV;
 }
