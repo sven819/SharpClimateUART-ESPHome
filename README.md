@@ -70,8 +70,15 @@ button:
     name: "Living Room Restart"
 
 climate:
-  - platform: sharp_ac       # adjust to match your AC unit!
+  - platform: sharp_ac     
+    id: hvac
     name: "Living Room AC"
+    horizontal_vane_select: 
+      name: "Horizontal Vane"
+    vertical_vane_select: 
+      name: "Vertikal Vane"
+    ion_switch:
+      name: Plasmacluster
 ```
 
 ###  Adding this Component
