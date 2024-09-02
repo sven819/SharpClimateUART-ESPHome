@@ -10,6 +10,13 @@ enum class PowerMode
     fan = 0x4
 };
 
+enum class Preset
+{
+    NONE = 0x0,
+    ECO = 0x1,
+    FULLPOWER = 0x2
+};
+
 enum class FanMode
 {
     low = 0x4,

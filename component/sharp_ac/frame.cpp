@@ -103,6 +103,15 @@ bool SharpModeFrame::getState()
     return (this->data[8] & 0xF0) != 0;
 }
 
+Preset SharpModeFrame::getPreset(){
+    if((this->data[7] & 0x40) == 0x40)
+        return Preset::ECO; 
+    else  if((this->data[7] & 0x80) == 0x80)
+        return Preset::FULLPOWER; 
+    return Preset::NONE;  
+}
+
+
 SwingVertical SharpModeFrame::getSwingVertical()
 {
     return static_cast<SwingVertical>(this->data[6] & 0x0F);
@@ -137,6 +146,7 @@ SharpCommandFrame::SharpCommandFrame() : SharpFrame()
     this->data[2] = 0xfb;
     this->data[3] = 0x60;
     this->data[7] = 0x00;
+    this->data[9] = 0x00;
     this->data[10] = 0x00;
     this->data[11] = 0xe4;
 }
@@ -167,26 +177,39 @@ void SharpCommandFrame::setData(SharpState *state)
     }
     }
 
+
+
     this->data[6] = (uint8_t)state->mode;
     if (state->mode == PowerMode::fan && state->fan == FanMode::auto_fan)
         this->data[6] |= (uint8_t)FanMode::low << 4;
+    else if (state->preset == Preset::FULLPOWER)
+        this->data[6] |= (uint8_t)FanMode::auto_fan << 4;
     else
         this->data[6] |= (uint8_t)state->fan << 4;
 
-    if (state->state)
-        this->data[5] = 0x31;
+    if (state->state){
+        if(state->preset == Preset::NONE)
+            this->data[5] = 0x31;//0x30 funktioniert auch ? 
+        else
+            this->data[5] = 0x61; 
+    }      
     else
         this->data[5] = 0x21;
 
     if (state->ion)
     {
-        this->data[9] = IonMode;
+       // this->data[9] = IonMode;
         this->data[11] = 0xE4;
     }
     else
     {
-        this->data[9] = 0x00;
         this->data[11] = 0x10;
+    }
+    if(state->preset == Preset::FULLPOWER){
+        this->data[10] = 0x01; 
+    }else if (state->preset == Preset::ECO){
+        this->data[7] = 0x10; 
+
     }
 
     this->data[8] = ((uint8_t)state->swingH << 4) | (uint8_t)state->swingV;

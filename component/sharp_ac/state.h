@@ -12,6 +12,7 @@ public:
     SwingVertical swingV;
     int temperature;
     bool ion;
+    Preset preset;
 
     SharpCommandFrame toFrame()
     {
@@ -20,7 +21,7 @@ public:
         return frame;
     }
 
-    SharpState() : state(false), mode(PowerMode::fan), fan(FanMode::low), temperature(16) {}
+    SharpState() : state(false), mode(PowerMode::fan), fan(FanMode::low), temperature(16), preset(Preset::NONE) {}
 
     SharpState(const SharpState &other)
     {
@@ -31,5 +32,6 @@ public:
         swingH = other.swingH;
         swingV = other.swingV;
         ion = other.ion;
+        preset = other.preset;
     }
 };

@@ -39,6 +39,10 @@ namespace esphome
       traits.add_supported_mode(ClimateMode::CLIMATE_MODE_DRY);
       traits.add_supported_mode(ClimateMode::CLIMATE_MODE_FAN_ONLY);
 
+      traits.add_supported_preset(ClimatePreset::CLIMATE_PRESET_ECO); 
+      traits.add_supported_preset(ClimatePreset::CLIMATE_PRESET_BOOST); 
+      traits.add_supported_preset(ClimatePreset::CLIMATE_PRESET_NONE); 
+
       traits.add_supported_swing_mode(ClimateSwingMode::CLIMATE_SWING_OFF);
       traits.add_supported_swing_mode(ClimateSwingMode::CLIMATE_SWING_BOTH);
       traits.add_supported_swing_mode(ClimateSwingMode::CLIMATE_SWING_HORIZONTAL);
@@ -166,6 +170,8 @@ namespace esphome
         this->state.state = status->getState();
         this->state.swingH = status->getSwingHorizontal();
         this->state.swingV = status->getSwingVertical();
+        this->state.preset = status->getPreset();
+
         if (this->state.state)
         {
           this->state.ion = status->getIon();
@@ -233,6 +239,14 @@ namespace esphome
       else
       {
         this->swing_mode = ClimateSwingMode::CLIMATE_SWING_OFF;
+      }
+
+      if(this->state.preset == Preset::NONE){
+        this->preset = ClimatePreset::CLIMATE_PRESET_NONE; 
+      }else if(this->state.preset == Preset::ECO){
+        this->preset = ClimatePreset::CLIMATE_PRESET_ECO; 
+      } else if(this->state.preset == Preset::FULLPOWER){
+        this->preset = ClimatePreset::CLIMATE_PRESET_BOOST; 
       }
 
       this->publish_state();
@@ -376,6 +390,22 @@ namespace esphome
       if (call.get_target_temperature().has_value())
       {
         clonedState.temperature = static_cast<int>(call.get_target_temperature().value());
+      }
+      if(call.get_preset().has_value())
+      {
+        if(call.get_preset() == ClimatePreset::CLIMATE_PRESET_NONE)
+        {
+          clonedState.preset = Preset::NONE;
+        }else  if(call.get_preset() == ClimatePreset::CLIMATE_PRESET_ECO)
+        {
+          clonedState.preset = Preset::ECO;
+
+        }else  if(call.get_preset() == ClimatePreset::CLIMATE_PRESET_BOOST)
+        {
+          clonedState.preset = Preset::FULLPOWER;
+
+        }
+
       }
 
       SharpCommandFrame frame = clonedState.toFrame();

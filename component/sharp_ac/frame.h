@@ -44,6 +44,7 @@ public:
     PowerMode getPowerMode();
     SwingVertical getSwingVertical();
     SwingHorizontal getSwingHorizontal();
+    Preset getPreset();
     bool getIon();
 };
 
