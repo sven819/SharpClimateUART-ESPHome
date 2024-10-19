@@ -1,5 +1,5 @@
 external_components:
-  - source: component
+  - source: components
     refresh: 0s
 
 esphome:
