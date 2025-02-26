@@ -77,7 +77,7 @@ namespace esphome
       if (frame.getSize() == 0)
         return;
 
-      esphome::ESP_LOGD("ac_frame", "Sharp INIT Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+      ESP_LOGD("ac_frame", "Sharp INIT Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
 
       switch (frame.getData()[0])
       {
@@ -289,7 +289,7 @@ namespace esphome
         frame.print();
         if (status == 8)
         {
-          esphome::ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+          ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
 
           if (frame.getSize() > 1 && frame.validateChecksum())
           {
@@ -409,7 +409,7 @@ namespace esphome
       }
 
       SharpCommandFrame frame = clonedState.toFrame();
-      esphome::ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+      ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
 
       this->write_frame(frame);
     }
