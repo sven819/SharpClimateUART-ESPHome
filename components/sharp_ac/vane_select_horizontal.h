@@ -34,7 +34,7 @@ namespace esphome
             }
             void control(const std::string &value) override
             {
-                SwingHorizontal pos;
+                SwingHorizontal pos = SwingHorizontal::middle; 
                 if (value == "swing")
                 {
                     pos = SwingHorizontal::swing;

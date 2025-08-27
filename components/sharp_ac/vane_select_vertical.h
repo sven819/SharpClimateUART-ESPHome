@@ -14,7 +14,7 @@ namespace esphome
             VaneSelectVertical() = default;
             void control(const std::string &value) override
             {
-                SwingVertical pos;
+                SwingVertical pos = SwingVertical::auto_position;
                 if (value == "auto")
                 {
                     pos = SwingVertical::auto_position;

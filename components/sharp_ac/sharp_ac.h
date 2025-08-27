@@ -39,6 +39,9 @@ namespace esphome
       void setVaneVertical(SwingVertical val);
 
       void publishUpdate();
+      
+    protected:
+      std::string analyzeByte(uint8_t byte, size_t position, bool isStatusFrame);
 
       size_t read_array(uint8_t *data, size_t len) noexcept
       {
@@ -59,6 +62,7 @@ namespace esphome
 
       void write_ack();
 
+    public:
       void setIonSwitch(switch_::Switch *ionSwitch)
       {
         this->ionSwitch = ionSwitch;
