@@ -12,8 +12,8 @@ namespace esphome
     static const char *const TAG = "sharp_ac.climate";
     void SharpAc::write_ack()
     {
-      SharpACKFrame frame1;
-      this->write_frame(frame1);
+      SharpACKFrame frame;
+      this->write_frame(frame);
     };
 
     void SharpAc::setup()
@@ -155,12 +155,110 @@ namespace esphome
       return SharpFrame(msg, size);
     }
 
+    std::string SharpAc::analyzeByte(uint8_t byte, size_t position, bool isStatusFrame) {
+      std::string result;
+      char hex[8];
+
+      if (isStatusFrame) {
+        switch(position) {
+          case 7:
+            snprintf(hex, sizeof(hex), "0x%02X", byte & 0x0F);
+            result = std::string("Temperatur LSB: ") + hex + " (" + std::to_string((byte & 0x0F) + 16) + "°C)";
+            break;
+          case 8:
+            snprintf(hex, sizeof(hex), "0x%02X", byte);
+            result = std::string("Temperatur MSB: ") + hex;
+            break;
+          default:
+            snprintf(hex, sizeof(hex), "0x%02X", byte);
+            result = std::string("Unbekannt: ") + hex;
+        }
+      } else {
+        switch(position) {
+          case 4:
+            {
+              std::string mode;
+              switch(static_cast<PowerMode>(byte & 0x0F)) {
+                case PowerMode::heat: mode = "Heat"; break;
+                case PowerMode::cool: mode = "Cool"; break;
+                case PowerMode::dry: mode = "Dry"; break;
+                case PowerMode::fan: mode = "Fan"; break;
+                default: mode = "Unknown";
+              }
+              result = std::string("Power Mode: ") + mode + " (0x" + esphome::format_hex_pretty(&byte, 1) + ")";
+            }
+            break;
+          case 5:
+            {
+              std::string fan;
+              switch(static_cast<FanMode>(byte & 0x0F)) {
+                case FanMode::low: fan = "Low"; break;
+                case FanMode::mid: fan = "Mid"; break;
+                case FanMode::high: fan = "High"; break;
+                case FanMode::highest: fan = "Highest"; break;
+                case FanMode::auto_fan: fan = "Auto"; break;
+                default: fan = "Unknown";
+              }
+              result = std::string("Fan Mode: ") + fan + " (0x" + esphome::format_hex_pretty(&byte, 1) + ")";
+            }
+            break;
+          case 6:
+            {
+              std::string swing_v;
+              switch(static_cast<SwingVertical>(byte & 0x0F)) {
+                case SwingVertical::swing: swing_v = "Swing"; break;
+                case SwingVertical::auto_position: swing_v = "Auto"; break;
+                case SwingVertical::highest: swing_v = "Highest"; break;
+                case SwingVertical::high: swing_v = "High"; break;
+                case SwingVertical::mid: swing_v = "Mid"; break;
+                case SwingVertical::low: swing_v = "Low"; break;
+                case SwingVertical::lowest: swing_v = "Lowest"; break;
+                default: swing_v = "Unknown";
+              }
+              result = std::string("Swing Vertical: ") + swing_v + " (0x" + esphome::format_hex_pretty(&byte, 1) + ")";
+            }
+            break;
+          case 7:
+            {
+              std::string swing_h;
+              switch(static_cast<SwingHorizontal>(byte & 0x0F)) {
+                case SwingHorizontal::swing: swing_h = "Swing"; break;
+                case SwingHorizontal::middle: swing_h = "Middle"; break;
+                case SwingHorizontal::right: swing_h = "Right"; break;
+                case SwingHorizontal::left: swing_h = "Left"; break;
+                default: swing_h = "Unknown";
+              }
+              result = std::string("Swing Horizontal: ") + swing_h + " (0x" + esphome::format_hex_pretty(&byte, 1) + ")";
+              
+              bool ion = (byte & IonMode) != 0;
+              result += std::string(", Ion: ") + (ion ? "ON" : "OFF");
+            }
+            break;
+          default:
+            snprintf(hex, sizeof(hex), "0x%02X", byte);
+            result = std::string("Unknown: ") + hex;
+        }
+      }
+      return result;
+    }
+
     void SharpAc::processUpdate(SharpFrame &frame)
     {
-      if (frame.getSize() == 18)
+      ESP_LOGD("sharp_ac", "Receive Frame (%d Bytes):", frame.getSize());
+      
+      bool isStatusFrame = (frame.getSize() == 18);
+      const uint8_t* data = frame.getData();
+      
+      for (size_t i = 0; i < frame.getSize(); i++) {
+        std::string analysis = analyzeByte(data[i], i, isStatusFrame);
+        ESP_LOGD("sharp_ac", "Byte %2d: %s", i, analysis.c_str());
+      }
+      
+      if (isStatusFrame)
       {
         SharpStatusFrame *status = static_cast<SharpStatusFrame *>(&frame);
         this->current_temperature = status->getTemperature();
+        ESP_LOGD("sharp_ac", "Status Frame - Aktuelle Temperatur: %.1f°C", this->current_temperature);
       }
       else
       {
@@ -176,9 +274,32 @@ namespace esphome
         {
           this->state.ion = status->getIon();
           if (this->state.mode == PowerMode::cool || this->state.mode == PowerMode::heat)
+          {
             this->state.temperature = status->getTemperature();
+          }
         }
+
+        ESP_LOGD("sharp_ac", "Zusammenfassung des Mode-Frames:");
+        ESP_LOGD("sharp_ac", "  Power: %s", this->state.state ? "ON" : "OFF");
+        ESP_LOGD("sharp_ac", "  Modus: %s", this->state.mode == PowerMode::heat ? "Heat" :
+                                           this->state.mode == PowerMode::cool ? "Cool" :
+                                           this->state.mode == PowerMode::dry ? "Dry" :
+                                           this->state.mode == PowerMode::fan ? "Fan" : "Unknown");
+        ESP_LOGD("sharp_ac", "  Lüfter: %s", this->state.fan == FanMode::auto_fan ? "Auto" :
+                                             this->state.fan == FanMode::low ? "Low" :
+                                             this->state.fan == FanMode::mid ? "Mid" :
+                                             this->state.fan == FanMode::high ? "High" :
+                                             this->state.fan == FanMode::highest ? "Highest" : "Unknown");
+        if (this->state.mode == PowerMode::cool || this->state.mode == PowerMode::heat)
+        {
+          ESP_LOGD("sharp_ac", "  Temperatur: %.1f°C", this->state.temperature);
+        }
+        ESP_LOGD("sharp_ac", "  Ion: %s", this->state.ion ? "ON" : "OFF");
+        ESP_LOGD("sharp_ac", "  Preset: %s", this->state.preset == Preset::NONE ? "None" :
+                                             this->state.preset == Preset::ECO ? "ECO" :
+                                             this->state.preset == Preset::FULLPOWER ? "Full Power" : "Unknown");
       }
+      
       this->publishUpdate();
     }
     void SharpAc::publishUpdate()
@@ -289,8 +410,6 @@ namespace esphome
         frame.print();
         if (status == 8)
         {
-          ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
-
           if (frame.getSize() > 1 && frame.validateChecksum())
           {
             this->write_ack();
@@ -345,6 +464,36 @@ namespace esphome
         case ClimateFanMode::CLIMATE_FAN_AUTO:
         {
           clonedState.fan = FanMode::auto_fan;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_ON:
+        {
+          clonedState.fan = FanMode::auto_fan;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_OFF:
+        {
+          clonedState.state = false;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_MIDDLE:
+        {
+          clonedState.fan = FanMode::mid;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_FOCUS:
+        {
+          clonedState.fan = FanMode::high;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_DIFFUSE:
+        {
+          clonedState.fan = FanMode::low;
+          break;
+        }
+        case ClimateFanMode::CLIMATE_FAN_QUIET:
+        {
+          clonedState.fan = FanMode::low;
           break;
         }
         case ClimateFanMode::CLIMATE_FAN_LOW:
@@ -403,14 +552,10 @@ namespace esphome
         }else  if(call.get_preset() == ClimatePreset::CLIMATE_PRESET_BOOST)
         {
           clonedState.preset = Preset::FULLPOWER;
-
         }
-
       }
 
       SharpCommandFrame frame = clonedState.toFrame();
-      ESP_LOGD("ac_frame", "Sharp Frame Data: %s", esphome::format_hex_pretty(frame.getData(), frame.getSize()).c_str());
-
       this->write_frame(frame);
     }
   }

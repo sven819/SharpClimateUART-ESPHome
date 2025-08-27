@@ -23,23 +23,23 @@ CONF_ION_SWITCH = "ion_switch"
 HORIZONTAL_SWING_OPTIONS = ["swing","left","center","right"]
 VERTICAL_SWING_OPTIONS = ["auto", "swing" , "up" , "up_center", "center", "down_center", "down"]
 
-SELECT_SCHEMA_VERTICAL = select.SELECT_SCHEMA.extend(
+SELECT_SCHEMA_VERTICAL = select.select_schema(VaneSelectVertical).extend(
     {
         cv.GenerateID(CONF_ID): cv.declare_id(VaneSelectVertical),
     }
 )
 
-SELECT_SCHEMA_HORIZONTAL = select.SELECT_SCHEMA.extend(
+SELECT_SCHEMA_HORIZONTAL = select.select_schema(VaneSelectHorizontal).extend(
     {
         cv.GenerateID(CONF_ID): cv.declare_id(VaneSelectHorizontal),
     }
 )
 
-ION_SCHEMA = switch.SWITCH_SCHEMA.extend(
+ION_SCHEMA = switch.switch_schema(IonSwitch).extend(
     {cv.GenerateID(CONF_ID): cv.declare_id(IonSwitch)}
 )
 
-CONFIG_SCHEMA = climate.CLIMATE_SCHEMA.extend(
+CONFIG_SCHEMA = climate.climate_schema(SharpAc).extend(
     {
         cv.GenerateID(): cv.declare_id(SharpAc),
         cv.Optional(CONF_HORIZONTAL_SWING_SELECT): SELECT_SCHEMA_HORIZONTAL,
