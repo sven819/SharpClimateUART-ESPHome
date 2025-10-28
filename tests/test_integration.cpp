@@ -166,10 +166,9 @@ bool compare_frames(const uint8_t* frame1, const uint8_t* frame2, size_t len) {
 // ============================================================================
 // Integration Tests
 // ============================================================================
-
 /**
- * Test: Initialization Sequence Matching
- * Verifiziert, dass die Init-Sequenz identisch zum Working Example ist
+ * Test: Init Sequence Matching
+ * Verifies that the initialization sequence matches the expected frames
  */
 bool test_init_sequence_matching() {
     std::cout << "\n=== Test: Init Sequence Matching ===" << std::endl;

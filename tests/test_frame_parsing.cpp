@@ -121,9 +121,9 @@ void test_full_power_25c() {
     printf("✓ PASSED\n");
 }
 
-// Test 6: Full Power ohne Cluster 17°C
+// Test 6: Full Power without Cluster 17°C
 void test_full_power_no_cluster() {
-    printf("\n=== Test: Full Power ohne Cluster 17°C ===\n");
+    printf("\n=== Test: Full Power without Cluster 17°C ===\n");
     const uint8_t frame[] = {0xdd, 0x0b, 0xfb, 0x60, 0xc1, 0x71, 0x22, 0x0c, 0xf8, 0x00, 0x21, 0x10, 0xe1, 0x30};
     printBytes("Frame", frame, 14);
     
@@ -137,9 +137,9 @@ void test_full_power_no_cluster() {
     printf("✓ PASSED\n");
 }
 
-// Test 7: Eco ohne Cluster 25°C
+// Test 7: Eco without Cluster 25°C
 void test_eco_no_cluster() {
-    printf("\n=== Test: Eco ohne Cluster 25°C ===\n");
+    printf("\n=== Test: Eco without Cluster 25°C ===\n");
     const uint8_t frame[] = {0xdd, 0x0b, 0xfb, 0x60, 0xc9, 0x61, 0x22, 0x10, 0xf8, 0x80, 0x00, 0xf0, 0xf1, 0xe5};
     printBytes("Frame", frame, 14);
     

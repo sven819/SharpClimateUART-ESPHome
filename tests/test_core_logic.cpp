@@ -158,8 +158,8 @@ void print_test_result(const char* test_name, bool passed) {
 // ============================================================================
 
 /**
- * Test 1: Initialisierung
- * Verifiziert, dass SharpAcCore korrekt initialisiert wird
+ * Test 1: Initialization
+ * Verifies that SharpAcCore initializes correctly
  */
 bool test_initialization() {
     print_test_header("Initialization");
@@ -182,9 +182,9 @@ bool test_initialization() {
 }
 
 /**
- * Test 2: Init-Sequenz
- * Verifiziert, dass die Initialisierungssequenz korrekt abläuft
- * Basiert auf der Sequenz aus working_example
+ * Test 2: Init Sequence
+ * Verifies that the initialization sequence runs correctly
+ * Based on the sequence from working_example
  */
 bool test_init_sequence() {
     print_test_header("Init Sequence");
@@ -300,14 +300,13 @@ bool test_parse_fan_modes() {
 
 /**
  * Test 7: Frame Parsing - Temperature Range
- * Verifiziert, dass Temperaturen im Bereich 16-30°C korrekt geparst werden
+ * Verifies that temperatures in the range 16-30°C are parsed correctly
  */
 bool test_parse_temperature_range() {
     print_test_header("Parse Temperature Range");
     
     bool passed = true;
     
-    // Test verschiedene Temperaturen
     // Temperatur = byte[4] - 0xC0 + 16
     // 16°C: 0xC0, 31°C: 0xCF
     
@@ -371,7 +370,6 @@ bool test_process_update() {
         core.loop();
     }
     
-    // Now status should be 8
     hw.reset_uart_buffer();
     callback.reset_counters();
     
@@ -385,7 +383,6 @@ bool test_process_update() {
     // Trigger loop to process
     core.loop();
     
-    // State sollte aktualisiert sein
     const SharpState& state = core.getState();
     
     std::cout << "  Debug: state_update_count = " << callback.state_update_count << std::endl;
@@ -393,7 +390,6 @@ bool test_process_update() {
     std::cout << "  Debug: state.temperature = " << state.temperature << std::endl;
     
     bool passed = true;
-    // Nach Frame-Verarbeitung sollte entweder Callback aufgerufen sein ODER Mode korrekt sein
     passed &= (callback.state_update_count > 0 || state.mode == PowerMode::cool);
     
     print_test_result("Process Update Integration", passed);
@@ -402,7 +398,7 @@ bool test_process_update() {
 
 /**
  * Test 10: Control Mode
- * Verifiziert, dass controlMode korrekt funktioniert
+ * Verifies that controlMode works correctly
  */
 bool test_control_mode() {
     print_test_header("Control Mode");
@@ -432,7 +428,7 @@ bool test_control_mode() {
 
 /**
  * Test 11: Control Temperature
- * Verifiziert, dass controlTemperature korrekt funktioniert
+ * Verifies that controlTemperature works correctly
  */
 bool test_control_temperature() {
     print_test_header("Control Temperature");
@@ -459,7 +455,7 @@ bool test_control_temperature() {
 
 /**
  * Test 12: Control Fan
- * Verifiziert, dass controlFan korrekt funktioniert
+ * Verifies that controlFan works correctly
  */
 bool test_control_fan() {
     print_test_header("Control Fan");
@@ -471,13 +467,11 @@ bool test_control_fan() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Setze Fan Mode
     core.controlFan(FanMode::high);
     
     const SharpState& state = core.getState();
     bool passed = (state.fan == FanMode::high);
     
-    // Sollte einen Frame senden
     passed &= (hw.sent_frames.size() > 0);
     
     print_test_result("Control Fan", passed);
@@ -486,7 +480,7 @@ bool test_control_fan() {
 
 /**
  * Test 13: Control Preset
- * Verifiziert, dass controlPreset korrekt funktioniert
+ * Verifies that controlPreset works correctly
  */
 bool test_control_preset() {
     print_test_header("Control Preset");
@@ -498,13 +492,11 @@ bool test_control_preset() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Setze Eco Preset
     core.controlPreset(Preset::ECO);
     
     const SharpState& state = core.getState();
     bool passed = (state.preset == Preset::ECO);
     
-    // Sollte einen Frame senden
     passed &= (hw.sent_frames.size() > 0);
     
     print_test_result("Control Preset", passed);
@@ -513,7 +505,7 @@ bool test_control_preset() {
 
 /**
  * Test 14: Ion Control
- * Verifiziert, dass setIon korrekt funktioniert
+ * Verifies that setIon works correctly
  */
 bool test_ion_control() {
     print_test_header("Ion Control");
@@ -525,7 +517,6 @@ bool test_ion_control() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Aktiviere Ion
     core.setIon(true);
     
     const SharpState& state = core.getState();
@@ -537,7 +528,7 @@ bool test_ion_control() {
 
 /**
  * Test 15: Vane Control
- * Verifiziert, dass Vane-Steuerung korrekt funktioniert
+ * Verifies that vane control works correctly
  */
 bool test_vane_control() {
     print_test_header("Vane Control");
@@ -549,7 +540,6 @@ bool test_vane_control() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Setze Vanes
     core.setVaneHorizontal(SwingHorizontal::swing);
     core.setVaneVertical(SwingVertical::swing);
     
@@ -578,7 +568,7 @@ int main() {
         total++; \
         if (test_func()) passed++;
     
-    // Frame Parsing Tests (basierend auf working_example)
+    // Frame Parsing Tests
     RUN_TEST(test_initialization);
     RUN_TEST(test_init_sequence);
     RUN_TEST(test_parse_cool_mode);
