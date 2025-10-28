@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
-#include "propertyTypes.h"
+#include "core_types.h"
 
 class SharpState;
 

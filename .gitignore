@@ -8,3 +8,10 @@
 **/.DS_Store
 testdev.yaml
 schlafzimmer.yaml
+working_example/**/*
+
+# C++ Unit Test artifacts
+tests/*.o
+tests/test_frame_parsing
+tests/test_core_logic
+tests/test_integration

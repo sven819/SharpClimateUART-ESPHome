@@ -1,6 +1,6 @@
 #pragma once
-#include "propertyTypes.h"
-#include "frame.h"
+#include "core_types.h"
+#include "core_frame.h"
 
 class SharpState
 {
@@ -21,7 +21,7 @@ public:
         return frame;
     }
 
-    SharpState() : state(false), mode(PowerMode::fan), fan(FanMode::low), temperature(16), preset(Preset::NONE) {}
+    SharpState() : state(false), mode(PowerMode::fan), fan(FanMode::low), swingH(SwingHorizontal::middle), swingV(SwingVertical::mid), temperature(25), ion(false), preset(Preset::NONE) {}
 
     SharpState(const SharpState &other)
     {
