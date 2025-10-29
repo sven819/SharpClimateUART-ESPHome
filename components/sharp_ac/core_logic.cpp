@@ -185,15 +185,15 @@ namespace esphome
         switch(position) {
           case 7:
             snprintf(hex, sizeof(hex), "0x%02X", byte & 0x0F);
-            result = std::string("Temperatur LSB: ") + hex + " (" + std::to_string((byte & 0x0F) + 16) + "°C)";
+            result = std::string("Temperature LSB: ") + hex + " (" + std::to_string((byte & 0x0F) + 16) + "°C)";
             break;
           case 8:
             snprintf(hex, sizeof(hex), "0x%02X", byte);
-            result = std::string("Temperatur MSB: ") + hex;
+            result = std::string("Temperature MSB: ") + hex;
             break;
           default:
             snprintf(hex, sizeof(hex), "0x%02X", byte);
-            result = std::string("Unbekannt: ") + hex;
+            result = std::string("Unknown: ") + hex;
         }
       } else {
         switch(position) {
