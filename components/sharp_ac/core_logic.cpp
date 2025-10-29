@@ -25,16 +25,18 @@ namespace esphome
 
     void SharpAcCore::startInit()
     {
-      unsigned long currentMillis = hardware->get_millis();
-      if ((currentMillis - this->connectionStart >= interval) || (this->connectionStart == 0))
-      {
-        hardware->log_debug(TAG, "Initializing connection...");
-        this->status = 0;
-        this->connectionStart = hardware->get_millis();
-
-        SharpFrame frame(init_msg, sizeof(init_msg) + 1);
-        this->write_frame(frame);
+      // Don't send if we're already waiting for a response
+      if (awaitingResponse) {
+        return;
       }
+
+      if (this->connectionStart == 0) {
+        hardware->log_debug(TAG, "Initializing connection...");
+        this->connectionStart = hardware->get_millis();
+      }
+
+      SharpFrame frame(init_msg, sizeof(init_msg) + 1);
+      this->write_frame(frame);
     }
 
     void SharpAcCore::sendInitMsg(const uint8_t *arr, size_t size)
@@ -113,6 +115,7 @@ namespace esphome
         SharpFrame frame(singleByte);
 
         hardware->log_debug(TAG, "RX: ACK");
+        awaitingResponse = false;
         
         return frame;
       }
@@ -159,12 +162,17 @@ namespace esphome
         
         hardware->log_debug(TAG, "RX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
         
+        awaitingResponse = false;
+        
         return frame;
       }
 
       SharpFrame frame(msg, size);
       
       hardware->log_debug(TAG, "RX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+      
+      // Mark that we received a valid response
+      awaitingResponse = false;
       
       return frame;
     }
@@ -375,9 +383,35 @@ namespace esphome
       this->write_frame(frame);
     }
 
+    void SharpAcCore::resetConnection()
+    {
+      this->status = 0;
+      this->awaitingResponse = false;
+      this->connectionStart = 0;
+      
+      if (callback) {
+        callback->on_connection_status_update(0);
+      }
+    }
+
+    void SharpAcCore::checkTimeout()
+    {
+      if (!awaitingResponse) {
+        return; 
+      }
+
+      unsigned long currentMillis = hardware->get_millis();
+      if (currentMillis - lastRequestTime >= responseTimeout) {
+        hardware->log_debug(TAG, "Timeout - no response for 10s, reconnecting...");
+        resetConnection();
+      }
+    }
+
     void SharpAcCore::loop()
     {
       unsigned long currentMillis = hardware->get_millis();
+
+      checkTimeout();
 
       if (hardware->available() > 0) {
       

@@ -73,6 +73,8 @@ namespace esphome
           hardware->log_debug(TAG, "TX: ACK");
         } else {
           hardware->log_debug(TAG, "TX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+          awaitingResponse = true;
+          lastRequestTime = hardware->get_millis();
         }
         
         hardware->write_array(frame.getData(), frame.getSize());
@@ -93,10 +95,15 @@ namespace esphome
       SharpFrame readMsg();
       void processUpdate(SharpFrame &frame);
       void startInit();
+      void checkTimeout();
+      void resetConnection();
       int status = 0;
       unsigned long connectionStart = 0;
       unsigned long previousMillis = 0;
+      unsigned long lastRequestTime = 0;
+      bool awaitingResponse = false;
       const long interval = 60000;
+      const long responseTimeout = 10000; // 10 seconds
       float currentTemperature = 0.0f;
     };
   }
