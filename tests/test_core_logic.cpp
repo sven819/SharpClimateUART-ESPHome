@@ -170,7 +170,7 @@ bool test_initialization() {
     
     core.setup();
     
-    // State sollte initial auf default-Werten sein
+    // State should initially be at default values
     const SharpState& state = core.getState();
     
     bool passed = true;
@@ -307,7 +307,7 @@ bool test_parse_temperature_range() {
     
     bool passed = true;
     
-    // Temperatur = byte[4] - 0xC0 + 16
+    // Temperatur = (byte[4] & 0x0F) + 16
     // 16°C: 0xC0, 31°C: 0xCF
     
     uint8_t frame_16c[] = {0xdd, 0x0b, 0xfb, 0x60, 0xc0, 0x31, 0x32, 0x00, 0xf9, 0x80, 0x00, 0xe4, 0x81, 0x8a};
@@ -410,10 +410,10 @@ bool test_control_mode() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Setze Mode auf Cool
+    // Set mode to Cool
     core.controlMode(PowerMode::cool, true);
     
-    // Sollte einen Frame senden
+    // Should send a frame
     bool passed = (hw.sent_frames.size() > 0);
     
     if (passed) {
@@ -440,13 +440,13 @@ bool test_control_temperature() {
     core.setup();
     hw.clear_sent_frames();
     
-    // Setze Temperatur
+    // Set temperature
     core.controlTemperature(24);
     
     const SharpState& state = core.getState();
     bool passed = (state.temperature == 24);
     
-    // Sollte einen Frame senden
+    // Should send a frame
     passed &= (hw.sent_frames.size() > 0);
     
     print_test_result("Control Temperature", passed);

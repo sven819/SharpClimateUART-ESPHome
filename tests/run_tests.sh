@@ -105,7 +105,20 @@ echo -e "\n${BLUE}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                      Test Summary                            ║"
 echo "╠══════════════════════════════════════════════════════════════╣"
-printf "║  Test suites passed: %d / %d                                    ║\n" $PASSED_TESTS $TOTAL_TESTS
+# Dynamically pad the summary line to fit the box
+summary="Test suites passed: $PASSED_TESTS / $TOTAL_TESTS"
+# Box width is 62, left border (1), 2 spaces, summary, padding, 1 space, right border (1) = 62
+# So, content width = 62 - 2 (borders) = 60
+# "  " (2 spaces) + summary + padding + " " (1 space) = 60
+content="  $summary"
+content_len=${#content}
+total_content_width=59  # 2 spaces + summary + padding + 1 space = 60, but we want 1 space before right border
+padding_len=$((total_content_width - content_len))
+padding=""
+if [ $padding_len -gt 0 ]; then
+    padding=$(printf '%*s' "$padding_len" "")
+fi
+printf "║%s%s ║\n" "$content" "$padding"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
