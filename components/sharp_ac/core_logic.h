@@ -35,6 +35,7 @@ namespace esphome
       virtual void on_ion_state_update(bool state) = 0;
       virtual void on_vane_horizontal_update(SwingHorizontal val) = 0;
       virtual void on_vane_vertical_update(SwingVertical val) = 0;
+      virtual void on_connection_status_update(int status) = 0;
     };
 
     class SharpAcCore
@@ -68,7 +69,11 @@ namespace esphome
         frame.setChecksum();
         frame.print();
         
-        hardware->log_debug(TAG, "SENT: %s (%d)", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str(), frame.getSize());
+        if (frame.getSize() == 1 && frame.getData()[0] == 0x06) {
+          hardware->log_debug(TAG, "TX: ACK");
+        } else {
+          hardware->log_debug(TAG, "TX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
+        }
         
         hardware->write_array(frame.getData(), frame.getSize());
       }

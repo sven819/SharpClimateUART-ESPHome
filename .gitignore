@@ -6,6 +6,8 @@
 **/.DS_Store
 testdev.yaml
 schlafzimmer.yaml
+wohnzimmer.yaml
+ota.yaml
 
 # C++ Unit Test artifacts
 tests/*.o

@@ -1,9 +1,9 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import climate, uart, select, switch
+from esphome.components import climate, uart, select, switch, text_sensor
 from esphome.const import CONF_ID
 
-AUTO_LOAD = ["climate", "uart", "select", "switch"]
+AUTO_LOAD = ["climate", "uart", "select", "switch", "text_sensor"]
 CODEOWNERS = ["@sven819"]
 
 CONF_SHARP_ID = "sharp_id"
@@ -15,10 +15,12 @@ VaneSelectVertical = sharp_ac_ns.class_("VaneSelectVertical", select.Select, cg.
 VaneSelectHorizontal = sharp_ac_ns.class_("VaneSelectHorizontal", select.Select, cg.Component)
 
 IonSwitch = sharp_ac_ns.class_("IonSwitch", switch.Switch)
+ConnectionStatusSensor = sharp_ac_ns.class_("ConnectionStatusSensor", text_sensor.TextSensor, cg.Component)
 
 CONF_HORIZONTAL_SWING_SELECT = "horizontal_vane_select"
 CONF_VERTICAL_SWING_SELECT = "vertical_vane_select"
 CONF_ION_SWITCH = "ion_switch"
+CONF_CONNECTION_STATUS = "connection_status"
 
 HORIZONTAL_SWING_OPTIONS = ["swing","left","center","right"]
 VERTICAL_SWING_OPTIONS = ["auto", "swing" , "up" , "up_center", "center", "down_center", "down"]
@@ -39,12 +41,17 @@ ION_SCHEMA = switch.switch_schema(IonSwitch).extend(
     {cv.GenerateID(CONF_ID): cv.declare_id(IonSwitch)}
 )
 
+CONNECTION_STATUS_SCHEMA = text_sensor.text_sensor_schema(ConnectionStatusSensor).extend(
+    {cv.GenerateID(CONF_ID): cv.declare_id(ConnectionStatusSensor)}
+)
+
 CONFIG_SCHEMA = climate.climate_schema(SharpAc).extend(
     {
         cv.GenerateID(): cv.declare_id(SharpAc),
         cv.Optional(CONF_HORIZONTAL_SWING_SELECT): SELECT_SCHEMA_HORIZONTAL,
         cv.Optional(CONF_VERTICAL_SWING_SELECT): SELECT_SCHEMA_VERTICAL,
-        cv.Optional(CONF_ION_SWITCH): ION_SCHEMA
+        cv.Optional(CONF_ION_SWITCH): ION_SCHEMA,
+        cv.Optional(CONF_CONNECTION_STATUS): CONNECTION_STATUS_SCHEMA
     }
 ).extend(uart.UART_DEVICE_SCHEMA)
 
@@ -68,6 +75,12 @@ async def to_code(config):
         swt = await switch.new_switch(conf)
         cg.add(var.setIonSwitch(swt))
         await cg.register_parented(swt, var)
+
+    if CONF_CONNECTION_STATUS in config:
+        conf = config[CONF_CONNECTION_STATUS]
+        sens = await text_sensor.new_text_sensor(conf)
+        cg.add(var.setConnectionStatusSensor(sens))
+        await cg.register_parented(sens, var)
 
     await uart.register_uart_device(var, config)
     await climate.register_climate(var, config)

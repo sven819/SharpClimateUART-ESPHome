@@ -21,6 +21,12 @@ namespace esphome
     void ESPHomeStateCallback::on_vane_vertical_update(SwingVertical val) {
     }
 
+    void ESPHomeStateCallback::on_connection_status_update(int status) {
+      if (sharp_ac_) {
+        sharp_ac_->updateConnectionStatus(status);
+      }
+    }
+
     SharpAc::SharpAc() {
       hardware_interface_ = std::make_unique<ESPHomeHardwareInterface>(this);
       state_callback_ = std::make_unique<ESPHomeStateCallback>(this);
@@ -62,18 +68,8 @@ namespace esphome
     {
       const auto& state = core_->getState();
       
-      ESP_LOGD("sharp_ac", "State Update - Power: %s, Mode: %d, Fan: %d, Temp: %d°C, Ion: %s", 
-               state.state ? "ON" : "OFF",
-               static_cast<int>(state.mode),
-               static_cast<int>(state.fan),
-               state.temperature,
-               state.ion ? "ON" : "OFF");
-      
       this->target_temperature = state.temperature;
       this->current_temperature = core_->getCurrentTemperature();
-      
-      ESP_LOGD("sharp_ac", "Temperature Update - Target: %.1f°C, Current: %.1f°C", 
-               this->target_temperature, this->current_temperature);
       
       switch (state.fan)
       {
@@ -291,6 +287,11 @@ namespace esphome
         }
       }
       
+      // Publish optimistic state immediately after sending command
+      // This prevents the UI from showing the old state briefly
+      ESP_LOGD("sharp_ac", "Publishing optimistic state update");
+      this->publishUpdate();
+      
       ESP_LOGD("sharp_ac", "=== Control Processing Complete ===");
     }
 
@@ -312,11 +313,34 @@ namespace esphome
     void SharpAc::setup()
     {
       core_->setup();
+      if (connectionStatusSensor != nullptr) {
+        connectionStatusSensor->publish_state("Disconnected");
+      }
     }
 
     void SharpAc::loop()
     {
       core_->loop();
+    }
+
+    void SharpAc::updateConnectionStatus(int status)
+    {
+      if (connectionStatusSensor == nullptr) {
+        return;
+      }
+
+      std::string status_text;
+      if (status < 8) {
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "Connecting (%d/8)", status);
+        status_text = buffer;
+      } else if (status == 8) {
+        status_text = "Connected";
+      } else {
+        status_text = "Unknown";
+      }
+
+      connectionStatusSensor->publish_state(status_text);
     }
 
   }

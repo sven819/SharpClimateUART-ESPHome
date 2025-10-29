@@ -4,6 +4,7 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/select/select.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
 
@@ -30,6 +31,7 @@ namespace esphome
 
     class VaneSelectVertical;
     class VaneSelectHorizontal;
+    class ConnectionStatusSensor;
     class SharpAc; 
 
     class ESPHomeHardwareInterface : public SharpAcHardwareInterface {
@@ -83,6 +85,7 @@ namespace esphome
       void on_ion_state_update(bool state) override;
       void on_vane_horizontal_update(SwingHorizontal val) override;
       void on_vane_vertical_update(SwingVertical val) override;
+      void on_connection_status_update(int status) override;
 
     private:
       SharpAc* sharp_ac_;
@@ -116,6 +119,12 @@ namespace esphome
       {
         this->vaneHorizontal = vane;
       };
+      void setConnectionStatusSensor(text_sensor::TextSensor *sensor)
+      {
+        this->connectionStatusSensor = sensor;
+      };
+
+      void updateConnectionStatus(int status);
 
     private:
       std::unique_ptr<ESPHomeHardwareInterface> hardware_interface_;
@@ -125,6 +134,7 @@ namespace esphome
       switch_::Switch *ionSwitch;
       VaneSelectVertical *vaneVertical;
       VaneSelectHorizontal *vaneHorizontal;
+      text_sensor::TextSensor *connectionStatusSensor{nullptr};
     };
   }
 }

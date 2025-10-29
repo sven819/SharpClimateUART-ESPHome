@@ -28,12 +28,11 @@ namespace esphome
       unsigned long currentMillis = hardware->get_millis();
       if ((currentMillis - this->connectionStart >= interval) || (this->connectionStart == 0))
       {
-        hardware->log_debug(TAG, "NEW CONNECTION - Attempting initialization");
+        hardware->log_debug(TAG, "Initializing connection...");
         this->status = 0;
         this->connectionStart = hardware->get_millis();
 
         SharpFrame frame(init_msg, sizeof(init_msg) + 1);
-        hardware->log_debug(TAG, "Sending init message: %s (%d)", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str(), frame.getSize());
         this->write_frame(frame);
       }
     }
@@ -41,10 +40,18 @@ namespace esphome
     void SharpAcCore::sendInitMsg(const uint8_t *arr, size_t size)
     {
       SharpFrame frame(arr, size);
-      hardware->log_debug(TAG, "sendInitMsg: Sending %d bytes: %s", size, hardware->format_hex_pretty(arr, size).c_str());
       this->write_frame(frame);
       this->status++;
-      hardware->log_debug(TAG, "sendInitMsg: Status advanced to %d", this->status);
+      
+      if (callback) {
+        callback->on_connection_status_update(this->status);
+      }
+      
+      if (this->status < 8) {
+        hardware->log_debug(TAG, "Connecting (%d/8)...", this->status);
+      } else {
+        hardware->log_debug(TAG, "Connected");
+      }
     }
 
     void SharpAcCore::init(SharpFrame &frame)
@@ -52,13 +59,25 @@ namespace esphome
       if (frame.getSize() == 0)
         return;
 
-      hardware->log_debug("ac_frame", "Sharp INIT Data: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
-
       switch (frame.getData()[0])
       {
       case 0x06:
         if (this->status == 2 || this->status == 7)
+        {
           this->status++;
+          
+          // Notify status change
+          if (callback) {
+            callback->on_connection_status_update(this->status);
+          }
+          
+          // Log progress for ACK steps (status 2->3 and 7->8)
+          if (this->status < 8) {
+            hardware->log_debug(TAG, "Connecting (%d/8)...", this->status);
+          } else {
+            hardware->log_debug(TAG, "Connected");
+          }
+        }
         break;
       case 0x02:
         if (this->status == 0)
@@ -93,7 +112,7 @@ namespace esphome
         uint8_t singleByte = hardware->read();
         SharpFrame frame(singleByte);
 
-        hardware->log_debug(TAG, "RECEIVED (single byte): %s", hardware->format_hex_pretty(&singleByte, 1).c_str());
+        hardware->log_debug(TAG, "RX: ACK");
         
         return frame;
       }
@@ -113,7 +132,7 @@ namespace esphome
           uint8_t singleByte = hardware->read();
           SharpFrame frame(singleByte);
           
-          hardware->log_debug(TAG, "RECEIVED (error recovery): %s", hardware->format_hex_pretty(&singleByte, 1).c_str());
+          hardware->log_debug(TAG, "RX: %s (error recovery)", hardware->format_hex_pretty(&singleByte, 1).c_str());
           
           return frame;
         }
@@ -138,14 +157,14 @@ namespace esphome
         hardware->read_array(msg + 8, size - 8);
         SharpFrame frame(msg, size);
         
-        hardware->log_debug(TAG, "RECEIVED: %s (%d)", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str(), frame.getSize());
+        hardware->log_debug(TAG, "RX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
         
         return frame;
       }
 
       SharpFrame frame(msg, size);
       
-      hardware->log_debug(TAG, "RECEIVED: %s (%d)", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str(), frame.getSize());
+      hardware->log_debug(TAG, "RX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
       
       return frame;
     }
@@ -250,14 +269,14 @@ namespace esphome
         return;
       }
       
-      hardware->log_debug(TAG, "Processing update frame of size %d", frame.getSize());
-      
-      // Status-Frames (18 Byte): Only Temperatur
+      // Status-Frames (18 Byte): Only Temperature (no state update needed)
       if (frame.getSize() == 18)
       {
         SharpStatusFrame *status = static_cast<SharpStatusFrame *>(&frame);
         this->currentTemperature = status->getTemperature();
-        hardware->log_debug(TAG, "Current temperature extracted: %.1f°C", this->currentTemperature);
+        hardware->log_debug(TAG, "Current temp: %.1f°C", this->currentTemperature);
+        // Publish only temperature update without changing state
+        this->publishUpdate();
       }
       // Mode-Frames (14 Byte): Full State
       else if (frame.getSize() >= 14)
@@ -277,15 +296,13 @@ namespace esphome
             this->state.temperature = status->getTemperature();
         }
         
-        hardware->log_debug(TAG, "State extracted - Power: %s, Mode: %d, Fan: %d, Temp: %d°C, Ion: %s, Preset: %d", 
-                            this->state.state ? "ON" : "OFF", 
-                            static_cast<int>(this->state.mode),
-                            static_cast<int>(this->state.fan),
-                            this->state.temperature,
-                            this->state.ion ? "ON" : "OFF",
-                            static_cast<int>(this->state.preset));
-        
-        this->publishUpdate();
+        // Only publish update if we have received at least one temperature reading
+        // This prevents showing 0°C before the first status frame
+        if (this->currentTemperature > 0.0f) {
+          this->publishUpdate();
+        } else {
+          hardware->log_debug(TAG, "Waiting for temperature reading...");
+        }
       }
     }
 
