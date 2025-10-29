@@ -1,0 +1,89 @@
+# Makefile for Sharp AC Unit Tests
+
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall -Wextra -I../components/sharp_ac -I. -DTEST_BUILD
+LDFLAGS = 
+
+# Component directory source files
+COMPONENT_DIR = ../components/sharp_ac
+CORE_FRAME_CPP = $(COMPONENT_DIR)/core_frame.cpp
+CORE_LOGIC_CPP = $(COMPONENT_DIR)/core_logic.cpp
+
+# Source files
+SOURCES_FRAME = test_frame_parsing.cpp $(CORE_FRAME_CPP)
+SOURCES_CORE = test_core_logic.cpp $(CORE_FRAME_CPP) $(CORE_LOGIC_CPP)
+SOURCES_INTEGRATION = test_integration.cpp $(CORE_FRAME_CPP) $(CORE_LOGIC_CPP)
+
+OBJECTS_FRAME = test_frame_parsing.o core_frame.o
+OBJECTS_CORE = test_core_logic.o core_frame.o core_logic.o
+OBJECTS_INTEGRATION = test_integration.o core_frame.o core_logic.o
+
+TARGET_FRAME = test_frame_parsing
+TARGET_CORE = test_core_logic
+TARGET_INTEGRATION = test_integration
+
+# Mock ESPHome dependencies for testing
+MOCK_SOURCES = test_mocks.cpp
+MOCK_OBJECTS = $(MOCK_SOURCES:.cpp=.o)
+
+all: $(TARGET_FRAME) $(TARGET_CORE) $(TARGET_INTEGRATION)
+
+$(TARGET_FRAME): test_frame_parsing.o core_frame.o $(MOCK_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(TARGET_CORE): test_core_logic.o core_frame.o core_logic.o $(MOCK_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(TARGET_INTEGRATION): test_integration.o core_frame.o core_logic.o $(MOCK_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Compilation rules
+test_frame_parsing.o: test_frame_parsing.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+test_core_logic.o: test_core_logic.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+test_integration.o: test_integration.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+core_frame.o: $(CORE_FRAME_CPP)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+core_logic.o: $(CORE_LOGIC_CPP)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+test_mocks.o: test_mocks.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean:
+	rm -f *.o $(TARGET_FRAME) $(TARGET_CORE) $(TARGET_INTEGRATION)
+
+# Run targets
+run: $(TARGET_FRAME)
+	@echo "\n=== Running Frame Parsing Tests ==="
+	./$(TARGET_FRAME)
+
+run_core: $(TARGET_CORE)
+	@echo "\n=== Running Core Logic Tests ==="
+	./$(TARGET_CORE)
+
+run_integration: $(TARGET_INTEGRATION)
+	@echo "\n=== Running Integration Tests ==="
+	./$(TARGET_INTEGRATION)
+
+run_all: $(TARGET_FRAME) $(TARGET_CORE) $(TARGET_INTEGRATION)
+	@echo "\n╔════════════════════════════════════════════════════════════════╗"
+	@echo "║          Running All Sharp AC Component Tests                  ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo "\n=== 1. Frame Parsing Tests ==="
+	./$(TARGET_FRAME)
+	@echo "\n=== 2. Core Logic Tests ==="
+	./$(TARGET_CORE)
+	@echo "\n=== 3. Integration Tests ==="
+	./$(TARGET_INTEGRATION)
+	@echo "\n╔════════════════════════════════════════════════════════════════╗"
+	@echo "║                    All Test Suites Complete                    ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+
+.PHONY: all clean run run_core run_integration run_all

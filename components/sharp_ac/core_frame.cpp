@@ -1,8 +1,7 @@
 #include <cstring>
-#include "propertyTypes.h"
-#include "frame.h"
-#include "state.h"
-#include "esphome/core/log.h"
+#include "core_types.h"
+#include "core_frame.h"
+#include "core_state.h"
 
 SharpFrame::SharpFrame(char c) : size(1)
 {
@@ -92,10 +91,8 @@ SharpModeFrame::SharpModeFrame(const uint8_t *arr) : SharpFrame(arr, 14)
 
 int SharpModeFrame::getTemperature()
 {
-    if ((this->data[4] & 0xF0) == 0x10)
-        return (this->data[4] & 0x0F) + 16;
-    else
-        return 16;
+    // Temperature is encoded in lower nibble + 16 offset
+    return (this->data[4] & 0x0F) + 16;
 }
 
 bool SharpModeFrame::getState()
@@ -104,32 +101,64 @@ bool SharpModeFrame::getState()
 }
 
 Preset SharpModeFrame::getPreset(){
-    if((this->data[7] & 0x40) == 0x40)
-        return Preset::ECO; 
-    else  if((this->data[7] & 0x80) == 0x80)
-        return Preset::FULLPOWER; 
+    // Response frames (0xFC): byte[7] bit-based (0x40=ECO, 0x80=FULLPOWER)
+    // Command frames (0xFB): byte[7]=0x10 for ECO, byte[10]=0x01 for FULLPOWER
+    if (this->data[2] == 0xFC) {
+        // Response frame format 
+        if((this->data[7] & 0x40) == 0x40)
+            return Preset::ECO; 
+        else if((this->data[7] & 0x80) == 0x80)
+            return Preset::FULLPOWER; 
+    } else {
+        // Command frame format (0xFB) 
+        if(this->data[10] == 0x01)
+            return Preset::FULLPOWER;
+        else if(this->data[7] == 0x10)
+            return Preset::ECO; 
+    }
+    
     return Preset::NONE;  
 }
 
 
 SwingVertical SharpModeFrame::getSwingVertical()
 {
-    return static_cast<SwingVertical>(this->data[6] & 0x0F);
+    // Response frames (0xFC)
+    // Command frames (0xFB)
+    if (this->data[2] == 0xFC)
+        return static_cast<SwingVertical>(this->data[6] & 0x0F);
+    else  // 0xFB command frames
+        return static_cast<SwingVertical>(this->data[8] & 0x0F);
 }
 
 SwingHorizontal SharpModeFrame::getSwingHorizontal()
 {
-    return static_cast<SwingHorizontal>((this->data[6] & 0xF0) >> 4);
+    // Response frames (0xFC)
+    // Command frames (0xFB)
+    if (this->data[2] == 0xFC)
+        return static_cast<SwingHorizontal>((this->data[6] & 0xF0) >> 4);
+    else  // 0xFB command frames
+        return static_cast<SwingHorizontal>((this->data[8] & 0xF0) >> 4);
 }
 
 FanMode SharpModeFrame::getFanMode()
 {
-    return static_cast<FanMode>((this->data[5] & 0xF0) >> 4);
+    // Response frames (0xFC)
+    // Command frames (0xFB)
+    if (this->data[2] == 0xFC)
+        return static_cast<FanMode>((this->data[5] & 0xF0) >> 4);
+    else  // 0xFB command frames
+        return static_cast<FanMode>((this->data[6] & 0xF0) >> 4);
 }
 
 PowerMode SharpModeFrame::getPowerMode()
 {
-    return static_cast<PowerMode>(this->data[5] & 0x0F);
+    // Response frames (0xFC)
+    // Command frames (0xFB)
+    if (this->data[2] == 0xFC)
+        return static_cast<PowerMode>(this->data[5] & 0x0F);
+    else  // 0xFB command frames
+        return static_cast<PowerMode>(this->data[6] & 0x0F);
 }
 
 bool SharpModeFrame::getIon()
@@ -177,8 +206,7 @@ void SharpCommandFrame::setData(SharpState *state)
     }
     }
 
-
-
+    // Byte 6: Mode (lower nibble) + Fan (upper nibble)
     this->data[6] = (uint8_t)state->mode;
     if (state->mode == PowerMode::fan && state->fan == FanMode::auto_fan)
         this->data[6] |= (uint8_t)FanMode::low << 4;
@@ -187,31 +215,36 @@ void SharpCommandFrame::setData(SharpState *state)
     else
         this->data[6] |= (uint8_t)state->fan << 4;
 
+    // Byte 5: State indicator
     if (state->state){
         if(state->preset == Preset::NONE)
-            this->data[5] = 0x31;//0x30 funktioniert auch ? 
+            this->data[5] = 0x31;
         else
             this->data[5] = 0x61; 
     }      
     else
         this->data[5] = 0x21;
 
+    // Ion mode
     if (state->ion)
     {
-       // this->data[9] = IonMode;
         this->data[11] = 0xE4;
     }
     else
     {
         this->data[11] = 0x10;
     }
+    
+    // Preset handling
+    // From working example
     if(state->preset == Preset::FULLPOWER){
         this->data[10] = 0x01; 
     }else if (state->preset == Preset::ECO){
         this->data[7] = 0x10; 
-
     }
 
+    // Swing data in byte 8
+    // From working example
     this->data[8] = ((uint8_t)state->swingH << 4) | (uint8_t)state->swingV;
 }
 

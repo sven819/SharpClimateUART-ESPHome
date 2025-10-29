@@ -39,4 +39,5 @@ climate:
       name: "Vertikal Vane"
     ion_switch:
       name: Plasmacluster
-
+    connection_status:
+      name: "AC Connection Status"

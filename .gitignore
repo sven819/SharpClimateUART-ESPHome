@@ -1,6 +1,4 @@
-# Gitignore settings for ESPHome
-# This is an example and may include too much for your use-case.
-# You can modify this file to suit your needs.
+# Gitignore settings for ESPHome 
 /.esphome/
 /secrets.yaml
 /logs/
@@ -8,3 +6,11 @@
 **/.DS_Store
 testdev.yaml
 schlafzimmer.yaml
+wohnzimmer.yaml
+ota.yaml
+
+# C++ Unit Test artifacts
+tests/*.o
+tests/test_frame_parsing
+tests/test_core_logic
+tests/test_integration
