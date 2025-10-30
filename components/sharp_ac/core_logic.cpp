@@ -296,10 +296,10 @@ namespace esphome
         this->state.swingH = status->getSwingHorizontal();
         this->state.swingV = status->getSwingVertical();
         this->state.preset = status->getPreset();
+        this->state.ion = status->getIon();
 
         if (this->state.state)
         {
-          this->state.ion = status->getIon();
           if (this->state.mode == PowerMode::cool || this->state.mode == PowerMode::heat)
             this->state.temperature = status->getTemperature();
         }
