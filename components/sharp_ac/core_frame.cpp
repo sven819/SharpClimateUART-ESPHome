@@ -97,7 +97,8 @@ int SharpModeFrame::getTemperature()
 
 bool SharpModeFrame::getState()
 {
-    return (this->data[8] & 0xF0) != 0;
+    // Only check Bit 7 (0x80) for actual power state
+    return (this->data[8] & 0x80) != 0;
 }
 
 Preset SharpModeFrame::getPreset(){
@@ -163,7 +164,9 @@ PowerMode SharpModeFrame::getPowerMode()
 
 bool SharpModeFrame::getIon()
 {
-    return (this->data[8] == 0x84);
+    // Check Bit 2 (0x04) for Ion/Plasmacluster state
+    // 0x84, 0x94, 0x04 all have Ion ON
+    return (this->data[8] & 0x04) != 0;
 }
 
 SharpCommandFrame::SharpCommandFrame() : SharpFrame()
