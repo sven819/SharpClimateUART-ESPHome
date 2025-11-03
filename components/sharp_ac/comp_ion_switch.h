@@ -1,7 +1,7 @@
 #pragma once
 
 #include "esphome/components/switch/switch.h"
-#include "sharp_ac.h"
+#include "comp_climate.h"
 
 namespace esphome
 {
