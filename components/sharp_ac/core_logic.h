@@ -60,6 +60,7 @@ namespace esphome
       void controlSwing(SwingHorizontal h, SwingVertical v);
       void controlTemperature(int temperature);
       void controlPreset(Preset preset);
+      void resetConnection();
 
     protected:
       std::string analyzeByte(uint8_t byte, size_t position, bool isStatusFrame);
@@ -96,7 +97,6 @@ namespace esphome
       void processUpdate(SharpFrame &frame);
       void startInit();
       void checkTimeout();
-      void resetConnection();
       int status = 0;
       unsigned long connectionStart = 0;
       unsigned long previousMillis = 0;

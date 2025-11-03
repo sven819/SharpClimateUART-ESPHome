@@ -82,7 +82,7 @@ SharpStatusFrame::SharpStatusFrame(const uint8_t *arr) : SharpFrame(arr, 18)
 
 int SharpStatusFrame::getTemperature()
 {
-    return (this->data[7] & 0x0F) + 16;
+    return this->data[7];
 }
 
 SharpModeFrame::SharpModeFrame(const uint8_t *arr) : SharpFrame(arr, 14)

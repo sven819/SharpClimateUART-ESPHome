@@ -1,4 +1,5 @@
 # Gitignore settings for ESPHome 
+# Gitignore settings for ESPHome 
 /.esphome/
 /secrets.yaml
 /logs/
@@ -8,6 +9,15 @@ testdev.yaml
 schlafzimmer.yaml
 wohnzimmer.yaml
 ota.yaml
+
+# C++ Unit Test artifacts
+tests/*.o
+tests/test_frame_parsing
+tests/test_core_logic
+tests/test_integration
+wohnzimmer.yaml
+ota.yaml
+**/node_modules/
 
 # C++ Unit Test artifacts
 tests/*.o
