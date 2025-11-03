@@ -41,3 +41,5 @@ climate:
       name: Plasmacluster
     connection_status:
       name: "AC Connection Status"
+    reconnect_button:
+      name: "AC Reconnect"

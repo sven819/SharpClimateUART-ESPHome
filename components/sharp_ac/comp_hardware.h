@@ -5,6 +5,7 @@
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/select/select.h"
 #include "esphome/components/text_sensor/text_sensor.h"
+#include "esphome/components/button/button.h"
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
 
@@ -32,6 +33,7 @@ namespace esphome
     class VaneSelectVertical;
     class VaneSelectHorizontal;
     class ConnectionStatusSensor;
+    class ReconnectButton;
     class SharpAc; 
 
     class ESPHomeHardwareInterface : public SharpAcHardwareInterface {
@@ -124,7 +126,13 @@ namespace esphome
         this->connectionStatusSensor = sensor;
       };
 
+      void setReconnectButton(button::Button *button)
+      {
+        this->reconnectButton = button;
+      };
+
       void updateConnectionStatus(int status);
+      void triggerReconnect();
 
     private:
       std::unique_ptr<ESPHomeHardwareInterface> hardware_interface_;
@@ -135,6 +143,7 @@ namespace esphome
       VaneSelectVertical *vaneVertical;
       VaneSelectHorizontal *vaneHorizontal;
       text_sensor::TextSensor *connectionStatusSensor{nullptr};
+      button::Button *reconnectButton{nullptr};
     };
   }
 }

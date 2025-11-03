@@ -1,6 +1,7 @@
 #include "comp_hardware.h"
 #include "comp_vane_horizontal.h"
 #include "comp_vane_vertical.h"
+#include "comp_reconnect_button.h"
 
 namespace esphome
 {
@@ -341,6 +342,24 @@ namespace esphome
       }
 
       connectionStatusSensor->publish_state(status_text);
+    }
+
+    void SharpAc::triggerReconnect()
+    {
+      ESP_LOGI("sharp_ac", "Triggering connection reset...");
+      if (core_)
+      {
+        core_->resetConnection();
+      }
+    }
+
+    void ReconnectButton::press_action()
+    {
+      ESP_LOGI("sharp_ac", "Reconnect button pressed - resetting connection");
+      if (this->parent_ != nullptr)
+      {
+        this->parent_->triggerReconnect();
+      }
     }
 
   }
