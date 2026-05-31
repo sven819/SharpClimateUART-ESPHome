@@ -1,23 +1,13 @@
 #pragma once
 
+#include "comp_climate.h"
 #include "esphome/components/button/button.h"
-#include "esphome/core/component.h"
 
-namespace esphome
-{
-  namespace sharp_ac
-  {
-    class SharpAc;
+namespace esphome::sharp_ac {
 
-    class ReconnectButton : public button::Button, public Component
-    {
-    public:
-      void set_parent(SharpAc *parent) { this->parent_ = parent; }
+class ReconnectButton : public button::Button, public Parented<SharpAc> {
+ protected:
+  void press_action() override;
+};
 
-    protected:
-      void press_action() override;
-      SharpAc *parent_{nullptr};
-    };
-
-  } 
-}
+}  // namespace esphome::sharp_ac

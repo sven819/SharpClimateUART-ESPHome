@@ -73,10 +73,11 @@ climate:
   - platform: sharp_ac     
     id: hvac
     name: "Living Room AC"
-    horizontal_vane_select: 
-      name: "Horizontal Vane"
-    vertical_vane_select: 
-      name: "Vertikal Vane"
+    vane:
+      horizontal:
+        name: "Horizontal Vane"
+      vertical:
+        name: "Vertical Vane"
     ion_switch:
       name: Plasmacluster
     connection_status:
