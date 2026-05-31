@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
 #include <cstddef>
 
@@ -9,102 +8,102 @@
 #include "core_frame.h"
 #include "core_messages.h"
 
-namespace esphome
-{
-  namespace sharp_ac
-  {
-    static const char *const TAG = "sharp_ac.climate";
+namespace esphome::sharp_ac {
 
-    class SharpAcHardwareInterface {
-    public:
-      virtual ~SharpAcHardwareInterface() = default;
-      virtual size_t read_array(uint8_t *data, size_t len) = 0;
-      virtual size_t available() = 0;
-      virtual void write_array(const uint8_t *data, size_t len) = 0;
-      virtual uint8_t peek() = 0;
-      virtual uint8_t read() = 0;
-      virtual unsigned long get_millis() = 0;
-      virtual void log_debug(const char* tag, const char* format, ...) = 0;
-      virtual std::string format_hex_pretty(const uint8_t *data, size_t len) = 0;
-    };
+static const char *const TAG = "sharp_ac.climate";
 
-    class SharpAcStateCallback {
-    public:
-      virtual ~SharpAcStateCallback() = default;
-      virtual void on_state_update() = 0;
-      virtual void on_ion_state_update(bool state) = 0;
-      virtual void on_vane_horizontal_update(SwingHorizontal val) = 0;
-      virtual void on_vane_vertical_update(SwingVertical val) = 0;
-      virtual void on_connection_status_update(int status) = 0;
-    };
+class SharpAcHardwareInterface {
+ public:
+  virtual ~SharpAcHardwareInterface() = default;
+  virtual size_t read_array(uint8_t *data, size_t len) = 0;
+  virtual size_t available() = 0;
+  virtual void write_array(const uint8_t *data, size_t len) = 0;
+  virtual uint8_t peek() = 0;
+  virtual uint8_t read() = 0;
+  virtual uint32_t get_millis() = 0;
+  virtual void log_debug(const char *tag, const char *format, ...) = 0;
+  virtual void format_hex_pretty_to(char *buffer, size_t buffer_size, const uint8_t *data, size_t len) = 0;
+};
 
-    class SharpAcCore
-    {
-    public:
-      SharpAcCore(SharpAcHardwareInterface* hardware, SharpAcStateCallback* callback);
-      virtual ~SharpAcCore() = default;
+class SharpAcStateCallback {
+ public:
+  virtual ~SharpAcStateCallback() = default;
+  virtual void on_state_update() = 0;
+  virtual void on_ion_state_update(bool state) = 0;
+  virtual void on_vane_horizontal_update(SwingHorizontal val) = 0;
+  virtual void on_vane_vertical_update(SwingVertical val) = 0;
+  virtual void on_connection_status_update(int status) = 0;
+};
 
-      void loop();
-      void setup();
+class SharpAcCore {
+ public:
+  SharpAcCore(SharpAcHardwareInterface *hardware, SharpAcStateCallback *callback);
+  virtual ~SharpAcCore() = default;
 
-      void setIon(bool state);
-      void setVaneHorizontal(SwingHorizontal val);
-      void setVaneVertical(SwingVertical val);
+  void loop();
+  void setup();
 
-      void publishUpdate();
-      const SharpState& getState() const { return state; }
-      float getCurrentTemperature() const { return currentTemperature; }
+  void set_ion(bool state);
+  void set_vane_horizontal(SwingHorizontal state);
+  void set_vane_vertical(SwingVertical state);
 
-      void controlMode(PowerMode mode, bool state);
-      void controlFan(FanMode fan);
-      void controlSwing(SwingHorizontal h, SwingVertical v);
-      void controlTemperature(int temperature);
-      void controlPreset(Preset preset);
-      void resetConnection();
+  void publish_update();
+  const SharpState &get_state() const { return state_; }
+  float get_current_temperature() const { return current_temperature_; }
 
-    protected:
-      std::string analyzeByte(uint8_t byte, size_t position, bool isStatusFrame);
+  void control_mode(PowerMode mode, bool state);
+  void control_fan(FanMode fan);
+  void control_swing(SwingHorizontal h, SwingVertical v);
+  void control_temperature(int temperature);
+  void control_preset(Preset preset);
+  void reset_connection();
 
-      void write_frame(SharpFrame &frame)
-      {
-        frame.setChecksum();
-        frame.print();
-        
-        if (frame.getSize() == 1 && frame.getData()[0] == 0x06) {
-          hardware->log_debug(TAG, "TX: ACK");
-        } else {
-          hardware->log_debug(TAG, "TX: %s", hardware->format_hex_pretty(frame.getData(), frame.getSize()).c_str());
-          awaitingResponse = true;
-          lastRequestTime = hardware->get_millis();
-        }
-        
-        hardware->write_array(frame.getData(), frame.getSize());
-      }
-
-      void write_ack();
-
-    private:
-      SharpAcHardwareInterface* hardware;
-      SharpAcStateCallback* callback;
-
-      void sendInitMsg(const uint8_t *arr, size_t size);
-      int errCounter = 0;
-
-    protected:
-      SharpState state;
-      void init(SharpFrame &frame);
-      SharpFrame readMsg();
-      void processUpdate(SharpFrame &frame);
-      void startInit();
-      void checkTimeout();
-      int status = 0;
-      unsigned long connectionStart = 0;
-      unsigned long previousMillis = 0;
-      unsigned long lastRequestTime = 0;
-      bool awaitingResponse = false;
-      const long interval = 60000;
-      const long responseTimeout = 10000; // 10 seconds
-      float currentTemperature = 0.0f;
-    };
+ protected:
+  void log_frame_(const char *prefix, const uint8_t *data, size_t len) {
+    char buffer[18 * 3]{0};
+    this->hardware_->format_hex_pretty_to(buffer, sizeof(buffer), data, len);
+    this->hardware_->log_debug(TAG, "%s%s", prefix, buffer);
   }
-}
+
+  void write_frame_(SharpFrame &frame) {
+    frame.set_checksum();
+    frame.print();
+
+    if (frame.get_size() == 1 && frame.get_data()[0] == 0x06) {
+      this->hardware_->log_debug(TAG, "TX: ACK");
+    } else {
+      this->log_frame_("TX: ", frame.get_data(), frame.get_size());
+      this->awaiting_response_ = true;
+      this->last_request_time_ = this->hardware_->get_millis();
+    }
+
+    this->hardware_->write_array(frame.get_data(), frame.get_size());
+  }
+
+  void write_ack_();
+
+ private:
+  SharpAcHardwareInterface *hardware_;
+  SharpAcStateCallback *callback_;
+
+  void send_init_msg_(const uint8_t *arr, size_t size);
+  int err_counter_ = 0;
+
+ protected:
+  SharpState state_;
+  void init_(SharpFrame &frame);
+  SharpFrame read_msg_();
+  void process_update_(SharpFrame &frame);
+  void start_init_();
+  void check_timeout_();
+  int status_ = 0;
+  uint32_t connection_start_ = 0;
+  uint32_t previous_millis_ = 0;
+  uint32_t last_request_time_ = 0;
+  bool awaiting_response_ = false;
+  static constexpr uint32_t INTERVAL = 60000UL;
+  static constexpr uint32_t RESPONSE_TIMEOUT = 10000UL;  // 10 seconds
+  float current_temperature_ = 0.0f;
+};
+
+}  // namespace esphome::sharp_ac
