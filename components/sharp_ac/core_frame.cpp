@@ -78,6 +78,33 @@ const uint8_t *SharpFrame::get_data() const { return data_; }
 
 size_t SharpFrame::get_size() const { return size_; }
 
+SharpFrameType SharpFrame::get_type() const {
+  if (this->size_ == 1 && this->data_ != nullptr && this->data_[0] == 0x06) {
+    return SharpFrameType::ACK;
+  }
+
+  if (this->data_ == nullptr || this->size_ < 3) {
+    return SharpFrameType::UNKNOWN;
+  }
+
+  if (this->data_[0] == 0xDD && this->data_[2] == 0xFB) {
+    return SharpFrameType::COMMAND;
+  }
+
+  if (this->data_[0] != 0xDC) {
+    return SharpFrameType::UNKNOWN;
+  }
+
+  switch (this->data_[2]) {
+    case 0xFC:
+      return SharpFrameType::MODE;
+    case 0xFD:
+      return SharpFrameType::STATUS;
+    default:
+      return SharpFrameType::UNKNOWN;
+  }
+}
+
 int SharpFrame::set_size(size_t sz) {
   if (this->size_ == 0) {
     this->size_ = sz;
@@ -136,14 +163,14 @@ bool SharpModeFrame::get_state() {
 Preset SharpModeFrame::get_preset() {
   // Response frames (0xFC): byte[7] bit-based (0x40=ECO, 0x80=FULLPOWER)
   // Command frames (0xFB): byte[7]=0x10 for ECO, byte[10]=0x01 for FULLPOWER
-  if (this->data_[2] == 0xFC) {
+  if (this->get_type() == SharpFrameType::MODE) {
     // Response frame format
     if ((this->data_[7] & 0x40) == 0x40) {
       return Preset::ECO;
     } else if ((this->data_[7] & 0x80) == 0x80) {
       return Preset::FULLPOWER;
     }
-  } else {
+  } else if (this->get_type() == SharpFrameType::COMMAND) {
     // Command frame format (0xFB)
     if (this->data_[10] == 0x01) {
       return Preset::FULLPOWER;
@@ -158,41 +185,49 @@ Preset SharpModeFrame::get_preset() {
 SwingVertical SharpModeFrame::get_swing_vertical() {
   // Response frames (0xFC)
   // Command frames (0xFB)
-  if (this->data_[2] == 0xFC) {
+  if (this->get_type() == SharpFrameType::MODE) {
     return static_cast<SwingVertical>(this->data_[6] & 0x0F);
-  } else {  // 0xFB command frames
+  } else if (this->get_type() == SharpFrameType::COMMAND) {
     return static_cast<SwingVertical>(this->data_[8] & 0x0F);
   }
+
+  return SwingVertical::AUTO_POSITION;
 }
 
 SwingHorizontal SharpModeFrame::get_swing_horizontal() {
   // Response frames (0xFC)
   // Command frames (0xFB)
-  if (this->data_[2] == 0xFC) {
+  if (this->get_type() == SharpFrameType::MODE) {
     return static_cast<SwingHorizontal>((this->data_[6] & 0xF0) >> 4);
-  } else {  // 0xFB command frames
+  } else if (this->get_type() == SharpFrameType::COMMAND) {
     return static_cast<SwingHorizontal>((this->data_[8] & 0xF0) >> 4);
   }
+
+  return SwingHorizontal::MIDDLE;
 }
 
 FanMode SharpModeFrame::get_fan_mode() {
   // Response frames (0xFC)
   // Command frames (0xFB)
-  if (this->data_[2] == 0xFC) {
+  if (this->get_type() == SharpFrameType::MODE) {
     return static_cast<FanMode>((this->data_[5] & 0xF0) >> 4);
-  } else {  // 0xFB command frames
+  } else if (this->get_type() == SharpFrameType::COMMAND) {
     return static_cast<FanMode>((this->data_[6] & 0xF0) >> 4);
   }
+
+  return FanMode::FAN_AUTO;
 }
 
 PowerMode SharpModeFrame::get_power_mode() {
   // Response frames (0xFC)
   // Command frames (0xFB)
-  if (this->data_[2] == 0xFC) {
+  if (this->get_type() == SharpFrameType::MODE) {
     return static_cast<PowerMode>(this->data_[5] & 0x0F);
-  } else {  // 0xFB command frames
+  } else if (this->get_type() == SharpFrameType::COMMAND) {
     return static_cast<PowerMode>(this->data_[6] & 0x0F);
   }
+
+  return PowerMode::COOL;
 }
 
 bool SharpModeFrame::get_ion() {

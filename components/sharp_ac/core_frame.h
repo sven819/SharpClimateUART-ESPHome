@@ -6,6 +6,14 @@
 
 namespace esphome::sharp_ac {
 
+enum class SharpFrameType {
+  UNKNOWN = 0,
+  ACK,
+  STATUS,
+  MODE,
+  COMMAND,
+};
+
 class SharpState;
 
 class SharpFrame {
@@ -26,6 +34,7 @@ class SharpFrame {
   uint8_t *get_data();
   const uint8_t *get_data() const;
   size_t get_size() const;
+  SharpFrameType get_type() const;
   int set_size(size_t sz);
   void print();
   virtual void set_checksum();
