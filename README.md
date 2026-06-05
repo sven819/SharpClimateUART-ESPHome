@@ -37,8 +37,12 @@ To use this component in your ESPHome configuration, follow the example below:
 
 ```yaml
 external_components:
-  - source: component
-    refresh: 0s
+  - source: 
+      type: git
+      url: https://github.com/sven819/SharpClimateUART-ESPHome
+      ref: main
+    components: [sharp_ac]
+    refresh: 1min
 
 esphome:
   name: klima_wohnzimmer
